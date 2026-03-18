@@ -19,7 +19,12 @@ public class ChecklistController {
         return ResponseEntity.ok(checklistService.findAll());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/dashboard")
+    public ResponseEntity<DashboardReportDTO> getDashboard() {
+        return ResponseEntity.ok(checklistService.getDashboardReport());
+    }
+
+    @GetMapping("/{id:\\d+}")
     public ResponseEntity<ChecklistDTO> getById(@PathVariable Long id) {
         return ResponseEntity.ok(checklistService.findById(id));
     }
@@ -29,18 +34,18 @@ public class ChecklistController {
         return ResponseEntity.status(HttpStatus.CREATED).body(checklistService.create(dto));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     public ResponseEntity<ChecklistDTO> update(@PathVariable Long id, @RequestBody ChecklistDTO dto) {
         return ResponseEntity.ok(checklistService.update(id, dto));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         checklistService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{id}/toggle")
+    @PatchMapping("/{id:\\d+}/toggle")
     public ResponseEntity<ChecklistDTO> toggleComplete(@PathVariable Long id) {
         return ResponseEntity.ok(checklistService.toggleComplete(id));
     }

@@ -18,6 +18,17 @@ public class ChecklistDTO {
     private String description;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime dueDate;
+    private LocalDateTime completedAt;
     private boolean completed;
+    private ChecklistStatus status;
+    private boolean overdue;
     private int itemCount;
+    private Long assignedToUserId;
+    private String assignedToUserName;
+    private Long createdByUserId;
+    private String createdByUserName;
+    private Long storeId;
+    private String storeCode;
+    private String storeName;
 }

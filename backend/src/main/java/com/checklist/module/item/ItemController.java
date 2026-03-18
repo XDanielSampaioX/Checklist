@@ -44,4 +44,15 @@ public class ItemController {
     public ResponseEntity<ItemDTO> toggleComplete(@PathVariable Long checklistId, @PathVariable Long id) {
         return ResponseEntity.ok(itemService.toggleComplete(id));
     }
+
+    @PostMapping("/{id}/attachments")
+    public ResponseEntity<ItemAttachmentDTO> addAttachment(@PathVariable Long checklistId, @PathVariable Long id, @RequestBody ItemAttachmentDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(itemService.addAttachment(id, dto));
+    }
+
+    @DeleteMapping("/{id}/attachments/{attachmentId}")
+    public ResponseEntity<Void> removeAttachment(@PathVariable Long checklistId, @PathVariable Long id, @PathVariable Long attachmentId) {
+        itemService.removeAttachment(id, attachmentId);
+        return ResponseEntity.noContent().build();
+    }
 }

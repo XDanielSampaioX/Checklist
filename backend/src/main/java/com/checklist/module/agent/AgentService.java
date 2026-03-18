@@ -22,64 +22,52 @@ public class AgentService {
         if (prompt == null || prompt.trim().isEmpty()) {
             return AgentResponse.builder()
                     .action("UNKNOWN")
-                    .result("Please provide a prompt.")
+                    .result("Envie um comando para eu executar.")
                     .success(false)
                     .build();
         }
 
-        String lowerPrompt = prompt.toLowerCase().trim();
+        String lowerPrompt = normalize(prompt);
 
         try {
-            // Create checklist: "create a checklist called 'Shopping List'"
-            if (lowerPrompt.contains("create") && lowerPrompt.contains("checklist")) {
+            if (isChecklistCreationPrompt(lowerPrompt)) {
                 return handleCreateChecklist(prompt);
             }
 
-            // Add item: "add item 'Buy milk' to checklist 1"
-            if ((lowerPrompt.contains("add") || lowerPrompt.contains("create")) && lowerPrompt.contains("item")) {
+            if (isItemCreationPrompt(lowerPrompt)) {
                 return handleAddItem(prompt);
             }
 
-            // Mark complete: "mark checklist 1 as complete"
-            if (lowerPrompt.contains("mark") && lowerPrompt.contains("complete")) {
+            if (isChecklistTogglePrompt(lowerPrompt)) {
                 return handleToggleChecklist(prompt);
             }
 
-            // Toggle complete for checklist
-            if (lowerPrompt.contains("toggle") && lowerPrompt.contains("checklist")) {
-                return handleToggleChecklist(prompt);
-            }
-
-            // List all checklists: "list all checklists"
-            if (lowerPrompt.contains("list") && lowerPrompt.contains("checklist")) {
+            if (isChecklistListPrompt(lowerPrompt)) {
                 return handleListChecklists();
             }
 
-            // Show items: "show items in checklist 1"
-            if ((lowerPrompt.contains("show") || lowerPrompt.contains("list")) && lowerPrompt.contains("item")) {
+            if (isItemListPrompt(lowerPrompt)) {
                 return handleListItems(prompt);
             }
 
-            // Delete checklist: "delete checklist 1"
-            if (lowerPrompt.contains("delete") && lowerPrompt.contains("checklist")) {
+            if (isChecklistDeletePrompt(lowerPrompt)) {
                 return handleDeleteChecklist(prompt);
             }
 
-            // Delete item: "delete item 1"
-            if (lowerPrompt.contains("delete") && lowerPrompt.contains("item")) {
+            if (isItemDeletePrompt(lowerPrompt)) {
                 return handleDeleteItem(prompt);
             }
 
             return AgentResponse.builder()
                     .action("UNKNOWN")
-                    .result("I could not understand the prompt. Try: 'create a checklist called X', 'add item Y to checklist N', 'list all checklists', 'show items in checklist N', 'mark checklist N as complete', 'delete checklist N'.")
+                    .result("Nao entendi o comando. Tente algo como: 'crie uma checklist chamada Loja', 'adicione o item Caixa na checklist 2', 'liste todas as checklists', 'mostre os itens da checklist 2' ou 'conclua a checklist 2'.")
                     .success(false)
                     .build();
 
         } catch (Exception e) {
             return AgentResponse.builder()
                     .action("ERROR")
-                    .result("An error occurred: " + e.getMessage())
+                    .result("Ocorreu um erro: " + e.getMessage())
                     .success(false)
                     .build();
         }
@@ -88,10 +76,10 @@ public class AgentService {
     private AgentResponse handleCreateChecklist(String prompt) {
         String title = extractQuotedText(prompt);
         if (title == null) {
-            title = extractAfterKeyword(prompt, new String[]{"called", "named", "titled"});
+            title = extractAfterKeyword(prompt, new String[]{"called", "named", "titled", "chamada", "chamado", "com nome", "nomeada"});
         }
         if (title == null || title.isEmpty()) {
-            title = "New Checklist";
+            title = "Nova Checklist";
         }
 
         ChecklistDTO dto = ChecklistDTO.builder()
@@ -102,33 +90,35 @@ public class AgentService {
 
         return AgentResponse.builder()
                 .action("CREATE_CHECKLIST")
-                .result("Created checklist '" + created.getTitle() + "' with id " + created.getId())
+                .result("Checklist '" + created.getTitle() + "' criada com id " + created.getId())
                 .success(true)
                 .build();
     }
 
     private AgentResponse handleAddItem(String prompt) {
-        Long checklistId = extractNumber(prompt, new String[]{"checklist", "to checklist", "in checklist"});
+        Long checklistId = extractNumber(prompt, new String[]{"checklist", "to checklist", "in checklist", "na checklist", "no checklist", "para checklist"});
         String itemDescription = extractQuotedText(prompt);
 
         if (itemDescription == null) {
-            itemDescription = extractAfterKeyword(prompt, new String[]{"item"});
+            itemDescription = extractAfterKeyword(prompt, new String[]{"item", "item chamado", "item com nome"});
             if (itemDescription != null) {
                 itemDescription = itemDescription.replaceAll("(?i)to checklist.*", "").trim();
                 itemDescription = itemDescription.replaceAll("(?i)in checklist.*", "").trim();
+                itemDescription = itemDescription.replaceAll("(?i)na checklist.*", "").trim();
+                itemDescription = itemDescription.replaceAll("(?i)no checklist.*", "").trim();
             }
         }
 
         if (checklistId == null) {
             return AgentResponse.builder()
                     .action("ADD_ITEM")
-                    .result("Could not determine checklist ID. Try: 'add item \"Buy milk\" to checklist 1'")
+                    .result("Nao consegui identificar o id da checklist. Exemplo: 'adicione o item \"Comprar leite\" na checklist 1'")
                     .success(false)
                     .build();
         }
 
         if (itemDescription == null || itemDescription.isEmpty()) {
-            itemDescription = "New Item";
+            itemDescription = "Novo Item";
         }
 
         ItemDTO dto = ItemDTO.builder()
@@ -139,7 +129,7 @@ public class AgentService {
 
         return AgentResponse.builder()
                 .action("ADD_ITEM")
-                .result("Added item '" + created.getDescription() + "' to checklist " + checklistId + " with id " + created.getId())
+                .result("Item '" + created.getDescription() + "' adicionado na checklist " + checklistId + " com id " + created.getId())
                 .success(true)
                 .build();
     }
@@ -150,7 +140,7 @@ public class AgentService {
         if (checklistId == null) {
             return AgentResponse.builder()
                     .action("TOGGLE_CHECKLIST")
-                    .result("Could not determine checklist ID. Try: 'mark checklist 1 as complete'")
+                    .result("Nao consegui identificar o id da checklist. Exemplo: 'conclua a checklist 1'")
                     .success(false)
                     .build();
         }
@@ -159,7 +149,7 @@ public class AgentService {
 
         return AgentResponse.builder()
                 .action("TOGGLE_CHECKLIST")
-                .result("Checklist " + checklistId + " is now " + (toggled.isCompleted() ? "complete" : "incomplete"))
+                .result("Checklist " + checklistId + " agora esta " + formatStatus(toggled.getStatus()))
                 .success(true)
                 .build();
     }
@@ -170,17 +160,17 @@ public class AgentService {
         if (checklists.isEmpty()) {
             return AgentResponse.builder()
                     .action("LIST_CHECKLISTS")
-                    .result("No checklists found.")
+                    .result("Nenhuma checklist encontrada.")
                     .success(true)
                     .build();
         }
 
-        StringBuilder sb = new StringBuilder("Found " + checklists.size() + " checklist(s):\n");
+        StringBuilder sb = new StringBuilder("Encontrei " + checklists.size() + " checklist(s):\n");
         for (ChecklistDTO c : checklists) {
             sb.append("- [").append(c.getId()).append("] ")
               .append(c.getTitle())
-              .append(" (").append(c.isCompleted() ? "completed" : "active").append(", ")
-              .append(c.getItemCount()).append(" items)\n");
+              .append(" (").append(formatStatus(c.getStatus())).append(", ")
+              .append(c.getItemCount()).append(" itens)\n");
         }
 
         return AgentResponse.builder()
@@ -196,7 +186,7 @@ public class AgentService {
         if (checklistId == null) {
             return AgentResponse.builder()
                     .action("LIST_ITEMS")
-                    .result("Could not determine checklist ID. Try: 'show items in checklist 1'")
+                    .result("Nao consegui identificar o id da checklist. Exemplo: 'mostre os itens da checklist 1'")
                     .success(false)
                     .build();
         }
@@ -206,16 +196,16 @@ public class AgentService {
         if (items.isEmpty()) {
             return AgentResponse.builder()
                     .action("LIST_ITEMS")
-                    .result("No items found in checklist " + checklistId)
+                    .result("Nenhum item encontrado na checklist " + checklistId)
                     .success(true)
                     .build();
         }
 
-        StringBuilder sb = new StringBuilder("Found " + items.size() + " item(s) in checklist " + checklistId + ":\n");
+        StringBuilder sb = new StringBuilder("Encontrei " + items.size() + " item(s) na checklist " + checklistId + ":\n");
         for (ItemDTO item : items) {
             sb.append("- [").append(item.getId()).append("] ")
               .append(item.getDescription())
-              .append(" (").append(item.isCompleted() ? "completed" : "pending").append(")\n");
+              .append(" (").append(item.isCompleted() ? "concluido" : "pendente").append(")\n");
         }
 
         return AgentResponse.builder()
@@ -231,7 +221,7 @@ public class AgentService {
         if (checklistId == null) {
             return AgentResponse.builder()
                     .action("DELETE_CHECKLIST")
-                    .result("Could not determine checklist ID. Try: 'delete checklist 1'")
+                    .result("Nao consegui identificar o id da checklist. Exemplo: 'apague a checklist 1'")
                     .success(false)
                     .build();
         }
@@ -240,7 +230,7 @@ public class AgentService {
 
         return AgentResponse.builder()
                 .action("DELETE_CHECKLIST")
-                .result("Deleted checklist " + checklistId)
+                .result("Checklist " + checklistId + " removida")
                 .success(true)
                 .build();
     }
@@ -251,7 +241,7 @@ public class AgentService {
         if (itemId == null) {
             return AgentResponse.builder()
                     .action("DELETE_ITEM")
-                    .result("Could not determine item ID. Try: 'delete item 1'")
+                    .result("Nao consegui identificar o id do item. Exemplo: 'apague o item 1'")
                     .success(false)
                     .build();
         }
@@ -260,9 +250,72 @@ public class AgentService {
 
         return AgentResponse.builder()
                 .action("DELETE_ITEM")
-                .result("Deleted item " + itemId)
+                .result("Item " + itemId + " removido")
                 .success(true)
                 .build();
+    }
+
+    private boolean isChecklistCreationPrompt(String prompt) {
+        return containsAny(prompt, "create", "new", "criar", "crie", "nova", "novo") && containsAny(prompt, "checklist", "lista");
+    }
+
+    private boolean isItemCreationPrompt(String prompt) {
+        return containsAny(prompt, "add", "create", "criar", "adicionar", "adicione", "incluir", "inclua") && containsAny(prompt, "item", "tarefa");
+    }
+
+    private boolean isChecklistTogglePrompt(String prompt) {
+        return containsAny(prompt, "mark", "toggle", "complete", "concluir", "conclua", "finalizar", "finalize", "reabrir", "reabra") && containsAny(prompt, "checklist", "lista");
+    }
+
+    private boolean isChecklistListPrompt(String prompt) {
+        return containsAny(prompt, "list", "show", "listar", "liste", "mostrar", "mostre", "ver") && containsAny(prompt, "checklist", "checklists", "lista", "listas");
+    }
+
+    private boolean isItemListPrompt(String prompt) {
+        return containsAny(prompt, "show", "list", "mostrar", "mostre", "listar", "liste", "ver") && containsAny(prompt, "item", "itens", "tarefa", "tarefas");
+    }
+
+    private boolean isChecklistDeletePrompt(String prompt) {
+        return containsAny(prompt, "delete", "remove", "remover", "remova", "apagar", "apague", "excluir", "exclua") && containsAny(prompt, "checklist", "lista");
+    }
+
+    private boolean isItemDeletePrompt(String prompt) {
+        return containsAny(prompt, "delete", "remove", "remover", "remova", "apagar", "apague", "excluir", "exclua") && containsAny(prompt, "item", "tarefa");
+    }
+
+    private boolean containsAny(String prompt, String... keywords) {
+        for (String keyword : keywords) {
+            if (prompt.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String normalize(String text) {
+        return text.toLowerCase()
+                .replace("á", "a")
+                .replace("à", "a")
+                .replace("ã", "a")
+                .replace("â", "a")
+                .replace("é", "e")
+                .replace("ê", "e")
+                .replace("í", "i")
+                .replace("ó", "o")
+                .replace("ô", "o")
+                .replace("õ", "o")
+                .replace("ú", "u")
+                .replace("ç", "c")
+                .trim();
+    }
+
+    private String formatStatus(com.checklist.module.checklist.ChecklistStatus status) {
+        return switch (status) {
+            case IN_PROGRESS -> "em andamento";
+            case OVERDUE -> "vencida";
+            case COMPLETED -> "concluida";
+            case COMPLETED_LATE -> "concluida com atraso";
+        };
     }
 
     private String extractQuotedText(String prompt) {
