@@ -1,5 +1,6 @@
 package com.checklist.module.checklist;
 
+import com.checklist.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +48,7 @@ public class ChecklistService {
 
     public void delete(Long id) {
         if (!checklistRepository.existsById(id)) {
-            throw new RuntimeException("Checklist not found with id: " + id);
+            throw new NotFoundException("Checklist not found with id: " + id);
         }
         checklistRepository.deleteById(id);
     }

@@ -21,11 +21,7 @@ public class ChecklistController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ChecklistDTO> getById(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(checklistService.findById(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(checklistService.findById(id));
     }
 
     @PostMapping
@@ -35,29 +31,17 @@ public class ChecklistController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ChecklistDTO> update(@PathVariable Long id, @RequestBody ChecklistDTO dto) {
-        try {
-            return ResponseEntity.ok(checklistService.update(id, dto));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(checklistService.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        try {
-            checklistService.delete(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        checklistService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/toggle")
     public ResponseEntity<ChecklistDTO> toggleComplete(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(checklistService.toggleComplete(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(checklistService.toggleComplete(id));
     }
 }

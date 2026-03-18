@@ -21,47 +21,27 @@ public class ItemController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ItemDTO> getById(@PathVariable Long checklistId, @PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(itemService.findById(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(itemService.findById(id));
     }
 
     @PostMapping
     public ResponseEntity<ItemDTO> create(@PathVariable Long checklistId, @RequestBody ItemDTO dto) {
-        try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(itemService.create(checklistId, dto));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(itemService.create(checklistId, dto));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ItemDTO> update(@PathVariable Long checklistId, @PathVariable Long id, @RequestBody ItemDTO dto) {
-        try {
-            return ResponseEntity.ok(itemService.update(id, dto));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(itemService.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long checklistId, @PathVariable Long id) {
-        try {
-            itemService.delete(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        itemService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/toggle")
     public ResponseEntity<ItemDTO> toggleComplete(@PathVariable Long checklistId, @PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(itemService.toggleComplete(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(itemService.toggleComplete(id));
     }
 }

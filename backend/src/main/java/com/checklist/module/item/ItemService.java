@@ -1,5 +1,6 @@
 package com.checklist.module.item;
 
+import com.checklist.exception.NotFoundException;
 import com.checklist.module.checklist.Checklist;
 import com.checklist.module.checklist.ChecklistService;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +53,7 @@ public class ItemService {
 
     public void delete(Long id) {
         if (!itemRepository.existsById(id)) {
-            throw new RuntimeException("Item not found with id: " + id);
+            throw new NotFoundException("Item not found with id: " + id);
         }
         itemRepository.deleteById(id);
     }
