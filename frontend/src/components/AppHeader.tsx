@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { UserSummary } from '@/lib/api';
-import ThemeToggle from './ThemeToggle';
 
 interface AppHeaderProps {
   user: UserSummary;
@@ -12,7 +11,7 @@ interface AppHeaderProps {
 
 export default function AppHeader({ user, onCreate, onLogout }: AppHeaderProps) {
   return (
-    <header className="border-b border-[var(--border)] bg-[color:rgba(255,248,243,0.72)] backdrop-blur-xl">
+    <header className="border-b border-[var(--border)] bg-[var(--surface-strong)] backdrop-blur-xl">
       <div className="mx-auto max-w-6xl px-4 py-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-center gap-3">
@@ -31,7 +30,6 @@ export default function AppHeader({ user, onCreate, onLogout }: AppHeaderProps) 
               <Link href="/" className="rounded-full px-4 py-2 text-[var(--text-secondary)] transition hover:bg-[var(--accent-soft)] hover:text-[var(--text-primary)]">Checklists</Link>
               <Link href="/dashboard" className="rounded-full px-4 py-2 text-[var(--text-secondary)] transition hover:bg-[var(--accent-soft)] hover:text-[var(--text-primary)]">Dashboard</Link>
             </nav>
-            <ThemeToggle />
             <button
               onClick={onCreate}
               className="app-accent-button rounded-2xl px-5 py-3 text-sm font-semibold shadow-lg transition hover:-translate-y-0.5"

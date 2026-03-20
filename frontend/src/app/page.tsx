@@ -7,6 +7,7 @@ import AgentPanel from '@/components/AgentPanel';
 import ChecklistCard from '@/components/ChecklistCard';
 import ChecklistDetail from '@/components/ChecklistDetail';
 import CreateChecklistModal from '@/components/CreateChecklistModal';
+import ThemeToggle from '@/components/ThemeToggle';
 import { Checklist, UserSummary, checklistApi } from '@/lib/api';
 
 const STATUS_COLUMNS: Array<{ status: Checklist['status']; title: string; accent: string }> = [
@@ -15,6 +16,25 @@ const STATUS_COLUMNS: Array<{ status: Checklist['status']; title: string; accent
   { status: 'COMPLETED_LATE', title: 'Concluidos com atraso', accent: 'var(--warning)' },
   { status: 'COMPLETED', title: 'Concluidos', accent: 'var(--success)' },
 ];
+
+function getStoreGroup(checklists: Checklist[]) {
+  return Object.values(
+    checklists.reduce<Record<string, { key: string; storeName: string; storeCode: string | null; items: Checklist[] }>>((acc, checklist) => {
+      const key = checklist.storeId?.toString() ?? `sem-loja-${checklist.id}`;
+      if (!acc[key]) {
+        acc[key] = {
+          key,
+          storeName: checklist.storeName ?? 'Sem loja',
+          storeCode: checklist.storeCode ?? null,
+          items: [],
+        };
+      }
+
+      acc[key].items.push(checklist);
+      return acc;
+    }, {})
+  ).sort((a, b) => a.storeName.localeCompare(b.storeName, 'pt-BR'));
+}
 
 export default function Home() {
   return (
@@ -81,7 +101,7 @@ function HomeContent({
     () =>
       STATUS_COLUMNS.map(column => ({
         ...column,
-        items: filteredChecklists.filter(checklist => checklist.status === column.status),
+        storeGroups: getStoreGroup(filteredChecklists.filter(checklist => checklist.status === column.status)),
       })),
     [filteredChecklists]
   );
@@ -111,30 +131,19 @@ function HomeContent({
                 </p>
               </div>
 
-              <div className="flex w-full max-w-xl flex-col gap-3">
-                <div className="app-panel-strong flex items-center gap-3 rounded-[24px] px-4 py-3">
-                  <span className="text-sm font-semibold text-[var(--text-soft)]">Buscar</span>
-                  <input
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    placeholder="Titulo, responsavel ou loja"
-                    className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-soft)]"
-                  />
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="app-accent-button rounded-2xl px-5 py-3 text-sm font-semibold transition hover:-translate-y-0.5"
-                  >
-                    Criar checklist
-                  </button>
-                  <button
-                    onClick={() => setShowAgentPanel(true)}
-                    className="rounded-2xl border border-[var(--border)] bg-[var(--surface-strong)] px-5 py-3 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface)]"
-                  >
-                    Abrir agente
-                  </button>
-                </div>
+              <div className="flex w-full max-w-xl flex-wrap gap-3">
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="app-accent-button rounded-2xl px-5 py-3 text-sm font-semibold transition hover:-translate-y-0.5"
+                >
+                  Criar checklist
+                </button>
+                <button
+                  onClick={() => setShowAgentPanel(true)}
+                  className="rounded-2xl border border-[var(--border)] bg-[var(--surface-strong)] px-5 py-3 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface)]"
+                >
+                  Abrir Jovem
+                </button>
               </div>
             </div>
           </div>
@@ -169,7 +178,24 @@ function HomeContent({
           </div>
         )}
 
-        {loading ? (
+        <section className="space-y-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">Kanban board</p>
+              <h3 className="text-2xl font-black tracking-tight text-[var(--text-primary)]">Checklist board</h3>
+            </div>
+            <div className="app-panel-strong flex min-w-[320px] items-center gap-3 rounded-[24px] px-4 py-3">
+              <span className="text-sm font-semibold text-[var(--text-soft)]">Buscar</span>
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Titulo, responsavel ou loja"
+                className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-soft)]"
+              />
+            </div>
+          </div>
+
+          {loading ? (
           <div className="app-panel rounded-[28px] py-20 text-center">
             <div className="app-soft">Loading checklists...</div>
           </div>
@@ -186,52 +212,68 @@ function HomeContent({
             </p>
           </div>
         ) : (
-          <section className="space-y-4">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">Kanban board</p>
-                <h3 className="text-2xl font-black tracking-tight text-[var(--text-primary)]">Checklist board</h3>
-              </div>
-              <p className="text-sm text-[var(--text-secondary)]">Arranjo visual inspirado em Trello, separado por status.</p>
-            </div>
-
             <div className="hide-scrollbar flex gap-4 overflow-x-auto pb-2">
               {groupedChecklists.map(column => (
                 <div key={column.status} className="app-board-column min-h-[58vh] w-[320px] shrink-0 rounded-[28px] p-4">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-[var(--text-primary)]">{column.title}</p>
-                      <p className="text-xs text-[var(--text-secondary)]">{column.items.length} checklist(s)</p>
+                      <p className="text-xs text-[var(--text-secondary)]">
+                        {column.storeGroups.reduce((total, group) => total + group.items.length, 0)} checklist(s)
+                      </p>
                     </div>
                     <span
                       className="rounded-full px-3 py-1 text-xs font-semibold text-white"
                       style={{ backgroundColor: column.accent }}
                     >
-                      {column.items.length}
+                      {column.storeGroups.reduce((total, group) => total + group.items.length, 0)}
                     </span>
                   </div>
 
                   <div className="space-y-3">
-                    {column.items.length === 0 ? (
+                    {column.storeGroups.length === 0 ? (
                       <div className="rounded-[22px] border border-dashed border-[var(--border)] bg-[var(--surface-strong)] p-4 text-sm text-[var(--text-secondary)]">
                         Nenhuma checklist nesta coluna.
                       </div>
                     ) : (
-                      column.items.map(checklist => (
-                        <ChecklistCard
-                          key={checklist.id}
-                          checklist={checklist}
-                          onUpdate={loadData}
-                          onSelect={setSelectedChecklistId}
-                        />
+                      column.storeGroups.map(group => (
+                        <details
+                          key={`${column.status}-${group.key}`}
+                          open
+                          className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-strong)]"
+                        >
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{group.storeName}</p>
+                              <p className="text-xs text-[var(--text-secondary)]">
+                                {group.storeCode ? `${group.storeCode} · ` : ''}
+                                {group.items.length} checklist(s)
+                              </p>
+                            </div>
+                            <span className="rounded-full bg-[var(--surface)] px-3 py-1 text-xs font-semibold text-[var(--text-primary)]">
+                              {group.items.length}
+                            </span>
+                          </summary>
+
+                          <div className="space-y-3 px-3 pb-3">
+                            {group.items.map(checklist => (
+                              <ChecklistCard
+                                key={checklist.id}
+                                checklist={checklist}
+                                onUpdate={loadData}
+                                onSelect={setSelectedChecklistId}
+                              />
+                            ))}
+                          </div>
+                        </details>
                       ))
                     )}
                   </div>
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          )}
+        </section>
       </main>
 
       {showAgentPanel && (
@@ -247,14 +289,17 @@ function HomeContent({
         </>
       )}
 
-      <button
-        onClick={() => setShowAgentPanel(prev => !prev)}
-        className="fixed bottom-5 right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full text-2xl text-white shadow-2xl transition hover:-translate-y-1 sm:bottom-6 sm:right-6"
-        style={{ backgroundColor: 'var(--accent)' }}
-        aria-label="Open AI agent"
-      >
-        {showAgentPanel ? '×' : '🤖'}
-      </button>
+      <div className="fixed bottom-5 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+        <ThemeToggle />
+        <button
+          onClick={() => setShowAgentPanel(prev => !prev)}
+          className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-strong)] text-xl text-[var(--text-primary)] shadow-2xl transition hover:-translate-y-1 hover:bg-[var(--surface)]"
+          aria-label="Abrir Jovem"
+          title="Abrir Jovem"
+        >
+          {showAgentPanel ? '×' : '🤖'}
+        </button>
+      </div>
 
       {showCreateModal && (
         <CreateChecklistModal

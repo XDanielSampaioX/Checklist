@@ -24,12 +24,19 @@ export interface UserSummary {
   role: 'ADMIN' | 'SUPERVISOR' | 'OPERATOR';
   supervisorId: number | null;
   storeId: number | null;
+  storeCode: string | null;
   storeName: string | null;
 }
 
 export interface LoginResponse {
   token: string;
   user: UserSummary;
+}
+
+export interface StoreSummary {
+  id: number;
+  code: string;
+  name: string;
 }
 
 export interface Checklist {
@@ -49,7 +56,9 @@ export interface Checklist {
   createdByUserId: number | null;
   createdByUserName: string | null;
   storeId: number | null;
+  storeCode: string | null;
   storeName: string | null;
+  items?: Item[];
 }
 
 export interface DashboardReport {
@@ -102,6 +111,14 @@ export const authApi = {
     if (!res.ok) throw new Error('Failed to login');
     return res.json();
   },
+  register: async (data: { name: string; email: string; password: string; storeId: number }): Promise<LoginResponse> => {
+    const res = await apiFetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to register');
+    return res.json();
+  },
   me: async (): Promise<UserSummary> => {
     const res = await apiFetch(`${API_BASE}/auth/me`);
     if (!res.ok) throw new Error('Failed to fetch current user');
@@ -110,6 +127,14 @@ export const authApi = {
   listAssignableUsers: async (): Promise<UserSummary[]> => {
     const res = await apiFetch(`${API_BASE}/users/assignable`);
     if (!res.ok) throw new Error('Failed to fetch assignable users');
+    return res.json();
+  },
+};
+
+export const storeApi = {
+  getAll: async (): Promise<StoreSummary[]> => {
+    const res = await apiFetch(`${API_BASE}/stores`);
+    if (!res.ok) throw new Error('Failed to fetch stores');
     return res.json();
   },
 };
